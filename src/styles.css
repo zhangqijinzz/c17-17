@@ -29,6 +29,21 @@ button { cursor: pointer; }
 .reset-link { color: #aaa49c; background: none; border: 0; text-align: left; padding: 0; font-size: 11px; }
 .reset-link:hover { color: #fff; }
 .saved-state { color: #7f9180; font: 10px 'DM Mono', monospace; }
+.restore-link { color: #eeb26a; background: none; border: 0; text-align: left; padding: 0; font-size: 11px; }
+.restore-link:hover { color: #ffd9a0; }
+.recovery-banner { border: 1px solid #e7d9c4; background: #fbf3e4; border-radius: 6px; padding: 12px 15px; margin-bottom: 16px; display: grid; gap: 10px; }
+.recovery-main { display: grid; gap: 2px; }
+.recovery-main strong { font-size: 13px; color: #8a5a2b; }
+.recovery-main span { font-size: 11px; color: #a07a4d; line-height: 1.5; }
+.recovery-actions { display: flex; gap: 8px; align-items: center; }
+.recovery-primary { border: 0; background: var(--coral); color: #fffaf1; border-radius: 6px; padding: 8px 14px; font-size: 12px; }
+.recovery-toggle { border: 1px solid #d9c9b2; background: #fff; color: #8a5a2b; border-radius: 6px; padding: 8px 14px; font-size: 12px; }
+.recovery-dismiss { border: 0; background: transparent; color: #a07a4d; font-size: 15px; padding: 4px 8px; margin-left: auto; }
+.backup-list { list-style: none; margin: 0; padding: 10px 0 0; border-top: 1px dashed #e0d2bd; display: grid; gap: 6px; }
+.backup-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.backup-meta { font-size: 11px; color: #8a7a5d; }
+.backup-list button { border: 1px solid #d9c9b2; background: #fff; color: #8a5a2b; border-radius: 5px; padding: 5px 10px; font-size: 11px; white-space: nowrap; }
+.recovery-toggle:hover, .backup-list button:hover { background: #fdf6ea; }
 .main-content { flex: 1; min-width: 0; }
 .topbar { height: 112px; background: var(--paper); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 44px; }
 .topbar h1 { font: 700 30px 'Playfair Display', serif; margin: 7px 0 0; letter-spacing: -.7px; }
