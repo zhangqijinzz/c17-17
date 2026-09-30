@@ -7,6 +7,11 @@ import {
   type StoryDocument,
   type StoryScene,
 } from '../models/story';
+import {
+  recordStoryBackup,
+  restoreStoryBackup,
+  type StoryBackup,
+} from '../models/storyBackup';
 import { getStats, getTimelineWarning, orderedScenes, validateName } from '../models/storyRules';
 import type { StoryRepository } from '../repositories/storyRepository';
 
@@ -20,6 +25,10 @@ export interface StoryViewState {
   error: string;
   search: string;
   activeSection: 'overview' | 'characters' | 'clues';
+  /** 跟项目一起持久化的留底列表（最多 5 份、每份保留 7 天） */
+  backups: StoryBackup[];
+  /** 最近一次整体替换对应的留底 id，用于通知条上的一键撤销 */
+  undoBackupId: string;
 }
 
 type Listener = () => void;
@@ -33,6 +42,8 @@ export class StoryViewModel {
     error: '',
     search: '',
     activeSection: 'overview',
+    backups: [],
+    undoBackupId: '',
   };
   private readonly listeners = new Set<Listener>();
 
@@ -50,7 +61,14 @@ export class StoryViewModel {
   initialize(): void {
     try {
       const story = this.repository.load();
-      this.setState({ status: story.status === 'complete' ? 'completed' : 'ready', story, stats: getStats(story), error: '' });
+      const backups = this.repository.loadBackups();
+      this.setState({
+        status: story.status === 'complete' ? 'completed' : 'ready',
+        story,
+        stats: getStats(story),
+        backups,
+        error: '',
+      });
     } catch {
       this.setState({ status: 'error', error: '故事读取失败，请重置为示例项目。' });
     }
@@ -158,9 +176,78 @@ export class StoryViewModel {
   }
 
   resetProject(): void {
-    const story = createStarterStory();
-    this.persist(story);
-    this.setState({ status: 'ready', story, stats: getStats(story), notice: '已恢复示例项目', error: '' });
+    const next = createStarterStory();
+    this.replaceStory(next, {
+      reason: 'restore-example',
+      notice: '已恢复示例项目，替换前的内容已留底，可在侧栏还原。',
+      failNotice: '恢复示例失败，请稍后重试。',
+    });
+  }
+
+  /**
+   * 还原一份历史留底；当前正在看的内容同样会先留一份底，
+   * 因此还原之后还可以再切回刚才的样子。
+   */
+  restoreBackup(backupId: string): void {
+    if (!this.state.story) return;
+    const result = restoreStoryBackup(this.state.backups, backupId, this.state.story, Date.now());
+    if (!result) {
+      this.setState({ notice: '该留底已超过保留期，无法还原。' });
+      return;
+    }
+    if (!this.saveBackups(result.backups)) return;
+    this.persist(result.story);
+    this.setState({
+      status: result.story.status === 'complete' ? 'completed' : 'ready',
+      story: result.story,
+      stats: getStats(result.story),
+      backups: result.backups,
+      undoBackupId: result.undoBackupId,
+      notice: '已还原留底内容，还原前的样子也已留底。',
+      error: '',
+    });
+  }
+
+  /** 通知条上的一键撤销：回到最近一次整体替换之前的内容 */
+  undoLastReplace(): void {
+    if (this.state.undoBackupId) this.restoreBackup(this.state.undoBackupId);
+  }
+
+  /**
+   * 所有「整体替换故事内容」动作的唯一入口：先把当前内容留底，再覆盖保存。
+   * 留底失败时不执行覆盖，保证当前内容始终可挽回。
+   */
+  private replaceStory(
+    next: StoryDocument,
+    options: { reason: 'restore-example'; notice: string; failNotice: string },
+  ): void {
+    // 读取失败、当前没有可留底的内容时（例如损坏数据下的紧急恢复），直接覆盖
+    if (this.state.story) {
+      const record = recordStoryBackup(this.state.backups, this.state.story, options.reason, Date.now());
+      if (!this.saveBackups(record.backups)) {
+        this.setState({ status: 'error', error: options.failNotice });
+        return;
+      }
+      this.persist(next);
+      this.setState({
+        status: next.status === 'complete' ? 'completed' : 'ready',
+        story: next,
+        stats: getStats(next),
+        backups: record.backups,
+        undoBackupId: record.backupId,
+        notice: options.notice,
+        error: '',
+      });
+    } else {
+      this.persist(next);
+      this.setState({
+        status: next.status === 'complete' ? 'completed' : 'ready',
+        story: next,
+        stats: getStats(next),
+        notice: options.notice,
+        error: '',
+      });
+    }
   }
 
   get visibleCharacters(): StoryCharacter[] {
@@ -193,7 +280,22 @@ export class StoryViewModel {
   private updateStory(updater: (story: StoryDocument) => StoryDocument, showEditing = true): void {
     const story = updater(this.requireStory());
     this.persist(story);
-    this.setState({ story, stats: getStats(story), status: showEditing ? 'editing' : this.state.status, error: '' });
+    this.setState({
+      story,
+      stats: getStats(story),
+      status: showEditing ? 'editing' : this.state.status,
+      undoBackupId: '',
+      error: '',
+    });
+  }
+
+  private saveBackups(backups: StoryBackup[]): boolean {
+    try {
+      this.repository.saveBackups(backups);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private persist(story: StoryDocument): void {

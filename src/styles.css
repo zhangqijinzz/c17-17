@@ -28,6 +28,18 @@ button { cursor: pointer; }
 .progress-track span { display: block; height: 100%; background: var(--coral); border-radius: inherit; transition: width .3s ease; }
 .reset-link { color: #aaa49c; background: none; border: 0; text-align: left; padding: 0; font-size: 11px; }
 .reset-link:hover { color: #fff; }
+.backup-dock { display: grid; gap: 8px; border-top: 1px solid #46413a; padding-top: 14px; }
+.backup-head { display: flex; justify-content: space-between; align-items: baseline; }
+.backup-head span { color: #efe6d7; font-size: 11px; }
+.backup-head b { color: #7f776c; font-weight: 400; font: 10px 'DM Mono', monospace; }
+.backup-empty { margin: 0; color: #7f776c; font-size: 10px; line-height: 1.6; }
+.backup-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 168px; overflow-y: auto; }
+.backup-item { display: grid; gap: 2px; width: 100%; text-align: left; background: #332f29; border: 1px solid #46413a; border-radius: 6px; padding: 7px 9px; color: #efe6d7; }
+.backup-item:hover { background: #3f3a33; border-color: #5a544b; }
+.backup-item strong { font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backup-item span { color: #8d857a; font: 9px 'DM Mono', monospace; }
+.notice { display: flex; align-items: center; gap: 12px; }
+.notice-action { margin-left: auto; border: 0; background: none; color: inherit; text-decoration: underline; font-size: 12px; white-space: nowrap; }
 .saved-state { color: #7f9180; font: 10px 'DM Mono', monospace; }
 .main-content { flex: 1; min-width: 0; }
 .topbar { height: 112px; background: var(--paper); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 44px; }
